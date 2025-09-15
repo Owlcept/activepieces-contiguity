@@ -4,6 +4,7 @@ import {
 } from '@activepieces/pieces-common';
 import { contiguityAuth } from '../../..';
 import {
+    InputPropertyMap,
     Property,
     createAction,
 } from '@activepieces/pieces-framework';
@@ -31,25 +32,45 @@ export const send_iMessage = createAction({
             description: 'iMessage content',
             required: true,
         }),
-        fallback: Property.Object({
+        fallback: Property.Checkbox({
             displayName: 'SMS/RCS Fallback',
             description: 'Fallback to SMS/RCS when iMessage fails or unsupported',
             required: false,
-            properties: {
-                when: Property.MultiSelectDropdown({
-                    displayName: 'When to Fallback',
-                    description: 'Conditions that trigger SMS/RCS fallback',
-                    required: true,
-                    options: [
-                        { label: 'iMessage Unsupported', value: 'imessage_unsupported' },
-                        { label: 'iMessage Fails', value: 'imessage_fails' },
-                    ],
-                }),
-                from: Property.ShortText({
-                    displayName: 'Fallback From Number',
-                    description: 'SMS/RCS number for fallback',
-                    required: false,
-                }),
+            defaultValue: false,
+        }),
+        fallback_when: Property.DynamicProperties({
+            displayName: "When to fallback",
+            description: 'Conditions that trigger SMS/RCS fallback',
+            required: true,
+            refreshers: ['fallback'],
+            props: async (propsValue): Promise<InputPropertyMap> => {
+                const fallback = propsValue['fallback'] as unknown as boolean;
+
+                if (!fallback){
+                    return{}
+                }
+                
+                if (fallback){
+                    return{
+                        when: Property.StaticMultiSelectDropdown({
+                            displayName: "When to fallback",
+                            description: "Conditions that trigger SMS/RCS fallback",
+                            required: true,
+                            options: {
+                                options:[
+                                    { label: 'iMessage Unsupported', value: 'imessage_unsupported' },
+                                    { label: 'iMessage Fails', value: 'imessage_fails' },
+                                ]
+                            }
+                        }),
+                        from: Property.ShortText({
+                            displayName: 'Fallback From Number',
+                            description: 'SMS/RCS number for fallback',
+                            required: false,
+                        }),
+                    };
+                }
+                return{};
             },
         }),
         attachments: Property.Array({
@@ -83,14 +104,13 @@ export const send_iMessage = createAction({
             ).max(10, 'Maximum 10 attachments').optional(),
         });
 
-        const { to, from, message, fallback, attachments } = context.propsValue;
+        const { to, from, message, attachments } = context.propsValue;
 
         const body: any = { to, message };
 
         if (from) body.from = from;
-        if (fallback) body.fallback = fallback;
         if (attachments?.length) {
-            body.attachments = attachments.map(attachment => attachment.url);
+            body.attachments = attachments.map(attachment => (attachment as {url: string}).url);
         }
 
         return await _fetch({
