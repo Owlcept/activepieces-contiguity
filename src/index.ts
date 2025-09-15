@@ -12,7 +12,7 @@ export const contiguityAuth = PieceAuth.SecretText({
 
 export const contiguity = createPiece({
   displayName: 'Contiguity',
-  description: 'An SMS service for your needs - quick and simple',
+  description: 'Communications for what you\'re building',
   auth: contiguityAuth,
   minimumSupportedRelease: '0.30.0',
   logoUrl: 'https://cdn.activepieces.com/pieces/contiguity.png',
