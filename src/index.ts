@@ -21,6 +21,13 @@ export const contiguity = createPiece({
   actions: [
     sendText,
     send_iMessage,
+    createCustomApiCallAction({
+            baseUrl: () => 'https://api.contiguity.com',
+            auth: contiguityAuth,
+            authMapping: async (auth) => ({
+                authorization: `Bearer ${auth}`,
+            }),
+    }),
   ],
   triggers: [],
 });
